@@ -1,0 +1,38 @@
+{
+  "name": "my-codex",
+  "version": "0.1.0",
+  "description": "A session-scoped Codex profile activator for public GitHub-hosted encrypted profiles.",
+  "type": "module",
+  "bin": {
+    "my-codex": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "codex",
+    "cli",
+    "github",
+    "profiles"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^14.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
