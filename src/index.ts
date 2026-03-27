@@ -26,7 +26,7 @@ program
   .command("use")
   .argument("<reference>", "profile reference: <owner> or <owner>/<profile>")
   .option("--yes", "skip interactive confirmation prompts")
-  .description("Open a temporary shell with Codex configured from a remote encrypted profile.")
+  .description("Launch Codex directly with a remote encrypted profile.")
   .action(async (reference: string, options: { yes?: boolean }) => {
     const code = await useProfile(reference, {
       assumeYes: options.yes,

@@ -36,6 +36,16 @@ export interface RuntimeReport {
   assumeYesEnv: string;
 }
 
+function requireCodexForUse(): string {
+  try {
+    return resolveExecutable("codex");
+  } catch {
+    throw new Error(
+      'Codex CLI is not available on PATH. Install `codex` first before running `my-codex use`.',
+    );
+  }
+}
+
 interface MutedReadline extends readline.Interface {
   _writeToOutput(text: string): void;
   output: NodeJS.WritableStream;
@@ -219,8 +229,10 @@ function withPrependedPath(binDir: string, currentPath: string | undefined): str
     : binDir;
 }
 
-export async function prepareEnvironment(profile: CodexProfile): Promise<PreparedEnvironment> {
-  const codexPath = resolveExecutable("codex");
+export async function prepareEnvironment(
+  profile: CodexProfile,
+  codexPath = resolveExecutable("codex"),
+): Promise<PreparedEnvironment> {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "my-codex-"));
   const binDir = path.join(tempRoot, "bin");
   await mkdir(binDir, { recursive: true });
@@ -277,16 +289,16 @@ export async function useProfile(
   referenceInput: string,
   options: ActivationOptions = {},
 ): Promise<number> {
+  const codexPath = requireCodexForUse();
   const { reference, profile } = await loadProfile(referenceInput, options);
-  const prepared = await prepareEnvironment(profile);
-  const shell = process.env.SHELL ?? "/bin/sh";
+  const prepared = await prepareEnvironment(profile, codexPath);
 
   process.stderr.write(
-    `Activated ${formatProfileReference(reference)} in ${profile.mode} mode. Exit the shell to leave.\n`,
+    `Launching codex for ${formatProfileReference(reference)} in ${profile.mode} mode.\n`,
   );
 
   try {
-    return await runChild(shell, [], prepared.env);
+    return await runChild("codex", [], prepared.env);
   } finally {
     await prepared.cleanup();
   }

@@ -8,7 +8,7 @@ The intended one-line UX is:
 npx -y my-codex use <your-github-name>
 ```
 
-`my-codex` reads the Codex configuration stored in your GitHub fork and automatically opens a temporary shell with your Codex session configured.
+`my-codex` reads the Codex configuration stored in your GitHub fork and automatically launches Codex with your session configured.
 
 ## Quick Start
 
@@ -104,7 +104,7 @@ Useful options:
 
 ### `use`
 
-`use` opens a temporary child shell with your profile activated.
+`use` launches Codex directly with your profile activated.
 
 It previews the profile source before passphrase entry, then previews the decrypted configuration before activation.
 
