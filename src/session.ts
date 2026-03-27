@@ -15,6 +15,7 @@ import {
 import type { CodexProfile } from "./profile.js";
 
 const PASSPHRASE_ENV = "MY_CODEX_PASSPHRASE";
+const ASSUME_YES_ENV = "MY_CODEX_ASSUME_YES";
 
 export interface LoadedProfile {
   reference: ProfileReference;
@@ -32,6 +33,7 @@ export interface RuntimeReport {
   nodeVersion: string;
   passphraseEnv: string;
   shell: string | null;
+  assumeYesEnv: string;
 }
 
 interface MutedReadline extends readline.Interface {
@@ -46,6 +48,20 @@ export function maskHiddenInputOutput(prompt: string, text: string): string {
   }
 
   return "*".repeat(text.length);
+}
+
+export function isAffirmativeResponse(input: string): boolean {
+  const normalized = input.trim().toLowerCase();
+  return normalized === "y" || normalized === "yes";
+}
+
+export function shouldAssumeYes(value: string | undefined): boolean {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "y";
 }
 
 async function readHiddenInput(prompt: string): Promise<string> {
@@ -76,6 +92,27 @@ async function readHiddenInput(prompt: string): Promise<string> {
     rl.question(prompt, (answer) => {
       rl.close();
       process.stderr.write("\n");
+      resolve(answer);
+    });
+  });
+}
+
+async function readVisibleInput(prompt: string): Promise<string> {
+  if (!process.stdin.isTTY || !process.stderr.isTTY) {
+    throw new Error(
+      `Confirmation required but no TTY is available. Re-run with --yes or set ${ASSUME_YES_ENV}=1.`,
+    );
+  }
+
+  return await new Promise<string>((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stderr,
+      terminal: true,
+    });
+
+    rl.question(prompt, (answer) => {
+      rl.close();
       resolve(answer);
     });
   });
@@ -113,6 +150,24 @@ export async function resolvePassphrase(options: ResolvePassphraseOptions = {}):
   return passphrase;
 }
 
+interface ConfirmActionOptions {
+  assumeYes?: boolean;
+}
+
+export async function confirmAction(
+  prompt: string,
+  options: ConfirmActionOptions = {},
+): Promise<void> {
+  if (options.assumeYes || shouldAssumeYes(process.env[ASSUME_YES_ENV])) {
+    return;
+  }
+
+  const answer = await readVisibleInput(prompt);
+  if (!isAffirmativeResponse(answer)) {
+    throw new Error("Aborted.");
+  }
+}
+
 async function fetchText(url: string): Promise<string> {
   const response = await fetch(url, {
     headers: {
@@ -127,10 +182,20 @@ async function fetchText(url: string): Promise<string> {
   return await response.text();
 }
 
-export async function loadProfile(referenceInput: string): Promise<LoadedProfile> {
+interface LoadProfileOptions {
+  assumeYes?: boolean;
+}
+
+export async function loadProfile(
+  referenceInput: string,
+  options: LoadProfileOptions = {},
+): Promise<LoadedProfile> {
   const reference = parseProfileReference(referenceInput);
   const encryptedText = await fetchText(reference.rawUrl);
   process.stderr.write(`${formatRemoteProfilePreview(reference, encryptedText)}\n`);
+  await confirmAction("Continue and decrypt this profile? [y/N] ", {
+    assumeYes: options.assumeYes,
+  });
   const passphrase = await resolvePassphrase({
     prompt: `Passphrase for ${formatProfileReference(reference)}: `,
   });
@@ -138,6 +203,9 @@ export async function loadProfile(referenceInput: string): Promise<LoadedProfile
   process.stderr.write(
     `${formatProfileSummary(profile, "Decrypted configuration preview:")}\n`,
   );
+  await confirmAction("Continue and activate this configuration? [y/N] ", {
+    assumeYes: options.assumeYes,
+  });
 
   return {
     reference,
@@ -201,8 +269,15 @@ async function runChild(command: string, args: string[], env: NodeJS.ProcessEnv)
   });
 }
 
-export async function useProfile(referenceInput: string): Promise<number> {
-  const { reference, profile } = await loadProfile(referenceInput);
+interface ActivationOptions {
+  assumeYes?: boolean;
+}
+
+export async function useProfile(
+  referenceInput: string,
+  options: ActivationOptions = {},
+): Promise<number> {
+  const { reference, profile } = await loadProfile(referenceInput, options);
   const prepared = await prepareEnvironment(profile);
   const shell = process.env.SHELL ?? "/bin/sh";
 
@@ -220,8 +295,9 @@ export async function useProfile(referenceInput: string): Promise<number> {
 export async function execWithProfile(
   referenceInput: string,
   commandWithArgs: string[],
+  options: ActivationOptions = {},
 ): Promise<number> {
-  const { profile } = await loadProfile(referenceInput);
+  const { profile } = await loadProfile(referenceInput, options);
   const prepared = await prepareEnvironment(profile);
   const [command, ...args] = commandWithArgs.length > 0 ? commandWithArgs : ["codex"];
 
@@ -245,5 +321,6 @@ export function inspectRuntime(): RuntimeReport {
     nodeVersion: process.version,
     passphraseEnv: PASSPHRASE_ENV,
     shell: process.env.SHELL ?? null,
+    assumeYesEnv: ASSUME_YES_ENV,
   };
 }

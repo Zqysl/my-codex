@@ -8,6 +8,7 @@ import { encryptProfile } from "./crypto.js";
 import { getDefaultCodexHome, importCodexProfile } from "./import-codex.js";
 import { formatProfileSummary } from "./preview.js";
 import {
+  confirmAction,
   execWithProfile,
   inspectRuntime,
   resolvePassphrase,
@@ -24,9 +25,12 @@ program
 program
   .command("use")
   .argument("<reference>", "profile reference: <owner> or <owner>/<profile>")
+  .option("--yes", "skip interactive confirmation prompts")
   .description("Open a temporary shell with Codex configured from a remote encrypted profile.")
-  .action(async (reference: string) => {
-    const code = await useProfile(reference);
+  .action(async (reference: string, options: { yes?: boolean }) => {
+    const code = await useProfile(reference, {
+      assumeYes: options.yes,
+    });
     process.exitCode = code;
   });
 
@@ -34,9 +38,12 @@ program
   .command("exec")
   .argument("<reference>", "profile reference: <owner> or <owner>/<profile>")
   .argument("[command...]", "command to execute inside the activated environment")
+  .option("--yes", "skip interactive confirmation prompts")
   .description("Run a single command with a remote encrypted profile activated.")
-  .action(async (reference: string, command: string[]) => {
-    const code = await execWithProfile(reference, command);
+  .action(async (reference: string, command: string[], options: { yes?: boolean }) => {
+    const code = await execWithProfile(reference, command, {
+      assumeYes: options.yes,
+    });
     process.exitCode = code;
   });
 
@@ -46,11 +53,13 @@ program
   .option("--codex-home <path>", "Codex home to import from", getDefaultCodexHome())
   .option("--name <name>", "profile name", "default")
   .option("--mode <mode>", "profile mode: shared or isolated", "shared")
+  .option("--yes", "skip interactive confirmation prompts")
   .description("Read auth.json and config.toml from Codex home, then encrypt them into an age file.")
   .action(async (output: string | undefined, options: {
     codexHome: string;
     mode: "shared" | "isolated";
     name: string;
+    yes?: boolean;
   }) => {
     const profile = await importCodexProfile({
       codexHome: options.codexHome,
@@ -60,6 +69,9 @@ program
     process.stderr.write(
       `${formatProfileSummary(profile, `Imported configuration preview from ${options.codexHome}:`)}\n`,
     );
+    await confirmAction("Continue and encrypt this configuration? [y/N] ", {
+      assumeYes: options.yes,
+    });
     const passphrase = await resolvePassphrase({
       confirm: true,
       prompt: `Passphrase to encrypt ${profile.name}: `,
