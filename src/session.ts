@@ -6,6 +6,7 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 
 import { decryptProfile } from "./crypto.js";
 import { writeCodexWrapper, resolveExecutable } from "./codex.js";
+import { formatProfileSummary, formatRemoteProfilePreview } from "./preview.js";
 import {
   formatProfileReference,
   parseProfileReference,
@@ -80,13 +81,22 @@ async function readHiddenInput(prompt: string): Promise<string> {
   });
 }
 
-export async function resolvePassphrase(confirm = false): Promise<string> {
+interface ResolvePassphraseOptions {
+  confirm?: boolean;
+  prompt?: string;
+  confirmPrompt?: string;
+}
+
+export async function resolvePassphrase(options: ResolvePassphraseOptions = {}): Promise<string> {
+  const prompt = options.prompt ?? "Passphrase: ";
+  const confirm = options.confirm ?? false;
+  const confirmPrompt = options.confirmPrompt ?? "Confirm passphrase: ";
   const fromEnv = process.env[PASSPHRASE_ENV];
   if (typeof fromEnv === "string" && fromEnv.length > 0) {
     return fromEnv;
   }
 
-  const passphrase = await readHiddenInput("Passphrase: ");
+  const passphrase = await readHiddenInput(prompt);
   if (passphrase.length === 0) {
     throw new Error("Passphrase cannot be empty.");
   }
@@ -95,7 +105,7 @@ export async function resolvePassphrase(confirm = false): Promise<string> {
     return passphrase;
   }
 
-  const repeated = await readHiddenInput("Confirm passphrase: ");
+  const repeated = await readHiddenInput(confirmPrompt);
   if (passphrase !== repeated) {
     throw new Error("Passphrases do not match.");
   }
@@ -120,8 +130,14 @@ async function fetchText(url: string): Promise<string> {
 export async function loadProfile(referenceInput: string): Promise<LoadedProfile> {
   const reference = parseProfileReference(referenceInput);
   const encryptedText = await fetchText(reference.rawUrl);
-  const passphrase = await resolvePassphrase(false);
+  process.stderr.write(`${formatRemoteProfilePreview(reference, encryptedText)}\n`);
+  const passphrase = await resolvePassphrase({
+    prompt: `Passphrase for ${formatProfileReference(reference)}: `,
+  });
   const profile = await decryptProfile(encryptedText, passphrase);
+  process.stderr.write(
+    `${formatProfileSummary(profile, "Decrypted configuration preview:")}\n`,
+  );
 
   return {
     reference,

@@ -6,6 +6,7 @@ import { Command } from "commander";
 
 import { encryptProfile } from "./crypto.js";
 import { getDefaultCodexHome, importCodexProfile } from "./import-codex.js";
+import { formatProfileSummary } from "./preview.js";
 import {
   execWithProfile,
   inspectRuntime,
@@ -56,7 +57,14 @@ program
       mode: options.mode,
       name: options.name,
     });
-    const passphrase = await resolvePassphrase(true);
+    process.stderr.write(
+      `${formatProfileSummary(profile, `Imported configuration preview from ${options.codexHome}:`)}\n`,
+    );
+    const passphrase = await resolvePassphrase({
+      confirm: true,
+      prompt: `Passphrase to encrypt ${profile.name}: `,
+      confirmPrompt: `Confirm passphrase for ${profile.name}: `,
+    });
     const encrypted = await encryptProfile(profile, passphrase);
     const defaultOutput = path.join(process.cwd(), "profiles", `${profile.name}.age`);
     const targetPath = output ?? defaultOutput;
