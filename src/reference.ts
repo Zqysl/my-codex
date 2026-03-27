@@ -1,7 +1,7 @@
 const DEFAULT_REPO = "my-codex";
 const DEFAULT_BRANCH = "main";
 const DEFAULT_PROFILE = "default";
-const PROFILE_EXTENSION = ".mcx.json";
+const PROFILE_EXTENSION = ".age";
 const SEGMENT_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 export interface ProfileReference {

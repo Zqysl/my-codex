@@ -13,9 +13,9 @@ describe("reference parsing", () => {
 
     expect(reference.owner).toBe("zqysl");
     expect(reference.profile).toBe("default");
-    expect(reference.filePath).toBe("profiles/default.mcx.json");
+    expect(reference.filePath).toBe("profiles/default.age");
     expect(reference.rawUrl).toBe(
-      "https://raw.githubusercontent.com/zqysl/my-codex/main/profiles/default.mcx.json",
+      "https://raw.githubusercontent.com/zqysl/my-codex/main/profiles/default.age",
     );
     expect(formatProfileReference(reference)).toBe("zqysl");
   });
@@ -25,7 +25,7 @@ describe("reference parsing", () => {
 
     expect(reference.owner).toBe("zqysl");
     expect(reference.profile).toBe("work");
-    expect(reference.filePath).toBe("profiles/work.mcx.json");
+    expect(reference.filePath).toBe("profiles/work.age");
     expect(formatProfileReference(reference)).toBe("zqysl/work");
   });
 });

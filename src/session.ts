@@ -4,7 +4,7 @@ import path from "node:path";
 import readline from "node:readline";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 
-import { decryptProfile, parseEnvelopeText } from "./crypto.js";
+import { decryptProfile } from "./crypto.js";
 import { writeCodexWrapper, resolveExecutable } from "./codex.js";
 import {
   formatProfileReference,
@@ -112,9 +112,8 @@ async function fetchText(url: string): Promise<string> {
 export async function loadProfile(referenceInput: string): Promise<LoadedProfile> {
   const reference = parseProfileReference(referenceInput);
   const encryptedText = await fetchText(reference.rawUrl);
-  const envelope = parseEnvelopeText(encryptedText);
   const passphrase = await resolvePassphrase(false);
-  const profile = decryptProfile(envelope, passphrase);
+  const profile = await decryptProfile(encryptedText, passphrase);
 
   return {
     reference,

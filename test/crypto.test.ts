@@ -3,13 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   decryptProfile,
   encryptProfile,
-  parseEnvelopeText,
-  serializeEnvelope,
 } from "../src/crypto.js";
 import { parseProfile } from "../src/profile.js";
 
 describe("crypto", () => {
-  it("round-trips an encrypted profile", () => {
+  it("round-trips an encrypted profile", async () => {
     const profile = parseProfile({
       version: 1,
       name: "default",
@@ -30,14 +28,14 @@ describe("crypto", () => {
       },
     });
 
-    const encrypted = encryptProfile(profile, "passphrase");
-    const reparsed = parseEnvelopeText(serializeEnvelope(encrypted));
-    const decrypted = decryptProfile(reparsed, "passphrase");
+    const encrypted = await encryptProfile(profile, "passphrase");
+    const decrypted = await decryptProfile(encrypted, "passphrase");
 
     expect(decrypted).toEqual(profile);
+    expect(encrypted).toContain("BEGIN AGE ENCRYPTED FILE");
   });
 
-  it("fails when the passphrase is wrong", () => {
+  it("fails when the passphrase is wrong", async () => {
     const profile = parseProfile({
       version: 1,
       name: "default",
@@ -49,9 +47,9 @@ describe("crypto", () => {
       providers: {},
     });
 
-    const encrypted = encryptProfile(profile, "passphrase");
+    const encrypted = await encryptProfile(profile, "passphrase");
 
-    expect(() => decryptProfile(encrypted, "wrong")).toThrow(
+    await expect(decryptProfile(encrypted, "wrong")).rejects.toThrow(
       "Failed to decrypt profile. Check that the passphrase is correct.",
     );
   });
