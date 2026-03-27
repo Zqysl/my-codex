@@ -1,14 +1,11 @@
 #!/usr/bin/env node
 import path from "node:path";
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 
 import { Command } from "commander";
 
-import {
-  encryptProfile,
-  serializeEnvelope,
-} from "./crypto.js";
-import { parseProfileText } from "./profile.js";
+import { encryptProfile } from "./crypto.js";
+import { getDefaultCodexHome, importCodexProfile } from "./import-codex.js";
 import {
   execWithProfile,
   inspectRuntime,
@@ -44,20 +41,28 @@ program
 
 program
   .command("encrypt")
-  .argument("<input>", "path to a plaintext profile JSON file")
   .argument("[output]", "output encrypted profile path")
-  .description("Encrypt a plaintext profile into a GitHub-safe .mcx.json envelope.")
-  .action(async (input: string, output?: string) => {
-    const plaintext = await readFile(input, "utf8");
-    const profile = parseProfileText(plaintext);
+  .option("--codex-home <path>", "Codex home to import from", getDefaultCodexHome())
+  .option("--name <name>", "profile name", "default")
+  .option("--mode <mode>", "profile mode: shared or isolated", "shared")
+  .description("Read auth.json and config.toml from Codex home, then encrypt them into an age file.")
+  .action(async (output: string | undefined, options: {
+    codexHome: string;
+    mode: "shared" | "isolated";
+    name: string;
+  }) => {
+    const profile = await importCodexProfile({
+      codexHome: options.codexHome,
+      mode: options.mode,
+      name: options.name,
+    });
     const passphrase = await resolvePassphrase(true);
-    const envelope = encryptProfile(profile, passphrase);
-    const defaultOutput = path.join(
-      path.dirname(input),
-      `${path.basename(input, path.extname(input))}.mcx.json`,
-    );
-    await writeFile(output ?? defaultOutput, serializeEnvelope(envelope), "utf8");
-    process.stderr.write(`Wrote ${output ?? defaultOutput}\n`);
+    const encrypted = await encryptProfile(profile, passphrase);
+    const defaultOutput = path.join(process.cwd(), "profiles", `${profile.name}.age`);
+    const targetPath = output ?? defaultOutput;
+    await mkdir(path.dirname(targetPath), { recursive: true });
+    await writeFile(targetPath, encrypted, "utf8");
+    process.stderr.write(`Imported ${options.codexHome} -> ${targetPath}\n`);
   });
 
 program
