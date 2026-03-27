@@ -28,6 +28,7 @@ describe("importCodexProfile", () => {
       [
         'model_provider = "demo"',
         'model = "gpt-5.4"',
+        'model_reasoning_effort = "xhigh"',
         "disable_response_storage = true",
         "",
         "[model_providers.demo]",
@@ -51,6 +52,7 @@ describe("importCodexProfile", () => {
     expect(profile.overrides).toMatchObject({
       model_provider: "demo",
       model: "gpt-5.4",
+      model_reasoning_effort: "high",
       disable_response_storage: true,
       "features.multi_agent": true,
     });

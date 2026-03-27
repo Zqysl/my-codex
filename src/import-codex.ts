@@ -69,6 +69,18 @@ function toJsonValue(value: unknown, label: string): JsonValue {
   throw new Error(`${label} is not JSON-serializable.`);
 }
 
+function normalizeOverrideValue(key: string, value: JsonValue): JsonValue {
+  if (
+    (key === "model_reasoning_effort" || key.endsWith(".model_reasoning_effort")) &&
+    typeof value === "string"
+  ) {
+    const normalized = value.replace(/^x(minimal|low|medium|high)$/u, "$1");
+    return normalized;
+  }
+
+  return value;
+}
+
 function flattenTomlValue(
   prefix: string,
   value: unknown,
@@ -87,7 +99,7 @@ function flattenTomlValue(
     return;
   }
 
-  overrides[prefix] = toJsonValue(value, prefix);
+  overrides[prefix] = normalizeOverrideValue(prefix, toJsonValue(value, prefix));
 }
 
 function parseProviders(
