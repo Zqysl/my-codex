@@ -100,14 +100,31 @@ Useful options:
 - `--name <name>`: profile name, defaults to `default`
 - `--mode <shared|isolated>`: whether to reuse `~/.codex` or allocate a temporary `CODEX_HOME`
 - `--codex-home <path>`: import from a non-default Codex directory
+- `--yes`: skip confirmation prompts
 
 ### `use`
 
 `use` opens a temporary child shell with your profile activated.
 
+It previews the profile source before passphrase entry, then previews the decrypted configuration before activation.
+
 ### `exec`
 
 `exec` runs one command with your profile activated, without opening an interactive shell.
+
+### Automation
+
+For non-interactive usage, skip confirmation prompts with:
+
+```sh
+MY_CODEX_ASSUME_YES=1
+```
+
+or:
+
+```sh
+my-codex use <owner> --yes
+```
 
 ### `doctor`
 
