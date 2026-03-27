@@ -39,6 +39,14 @@ interface MutedReadline extends readline.Interface {
   stdoutMuted?: boolean;
 }
 
+export function maskHiddenInputOutput(prompt: string, text: string): string {
+  if (text === prompt) {
+    return text;
+  }
+
+  return "*".repeat(text.length);
+}
+
 async function readHiddenInput(prompt: string): Promise<string> {
   if (!process.stdin.isTTY || !process.stderr.isTTY) {
     throw new Error(
@@ -57,7 +65,7 @@ async function readHiddenInput(prompt: string): Promise<string> {
     mutableRl.stdoutMuted = true;
     mutableRl._writeToOutput = (text) => {
       if (mutableRl.stdoutMuted) {
-        mutableRl.output.write("*".repeat(text.length));
+        mutableRl.output.write(maskHiddenInputOutput(prompt, text));
         return;
       }
 
