@@ -27,7 +27,9 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "commander": "^14.0.1"
+    "age-encryption": "^0.3.0",
+    "commander": "^14.0.1",
+    "smol-toml": "^1.6.1"
   },
   "devDependencies": {
     "@types/node": "^24.5.2",
