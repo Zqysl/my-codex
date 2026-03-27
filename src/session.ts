@@ -203,9 +203,6 @@ export async function loadProfile(
   const reference = parseProfileReference(referenceInput);
   const encryptedText = await fetchText(reference.rawUrl);
   process.stderr.write(`${formatRemoteProfilePreview(reference, encryptedText)}\n`);
-  await confirmAction("Continue and decrypt this profile? [y/N] ", {
-    assumeYes: options.assumeYes,
-  });
   const passphrase = await resolvePassphrase({
     prompt: `Passphrase for ${formatProfileReference(reference)}: `,
   });
