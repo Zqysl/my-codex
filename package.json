@@ -2,6 +2,14 @@
   "name": "my-codex",
   "version": "0.1.0",
   "description": "A session-scoped Codex profile activator for public GitHub-hosted encrypted profiles.",
+  "homepage": "https://github.com/Zqysl/my-codex#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zqysl/my-codex.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Zqysl/my-codex/issues"
+  },
   "type": "module",
   "bin": {
     "my-codex": "./dist/index.js"
@@ -17,6 +25,7 @@
     "build": "tsc -p tsconfig.json",
     "check": "tsc --noEmit -p tsconfig.json",
     "dev": "tsx src/index.ts",
+    "prepack": "pnpm build",
     "test": "vitest run"
   },
   "keywords": [
@@ -26,6 +35,9 @@
     "profiles"
   ],
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "age-encryption": "^0.3.0",
     "commander": "^14.0.1",
